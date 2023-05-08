@@ -4,7 +4,7 @@ import { fbApp } from './fb'
 
 export default () => {
   React.useEffect(() => {
-    console.log(fbApp)
+    // console.log(fbApp)
     createTriangle()
   }, [])
 

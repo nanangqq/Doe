@@ -7,6 +7,7 @@
     "build:prod": "esbuild src/index.jsx --bundle --minify --outfile=dist/index.js",
     "build:dev": "esbuild src/index.jsx --bundle --outfile=dist/index.js",
     "start": "npm run build:dev && serve dist -l 3000",
+    "deploy": "npm run build:prod && firebase deploy",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
