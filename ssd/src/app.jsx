@@ -1,8 +1,10 @@
 import * as React from 'react'
 import { createTriangle } from './webgpu'
+import { fbApp } from './fb'
 
 export default () => {
   React.useEffect(() => {
+    console.log(fbApp)
     createTriangle()
   }, [])
 

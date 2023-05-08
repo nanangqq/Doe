@@ -22,7 +22,6 @@ export const createTriangle = async (color = '(1.0,1.0,1.0,1.0)') => {
   })
 
   const shader = defaultShader(color)
-  console.log(shader)
 
   const pipeline = device.createRenderPipeline({
     layout: 'auto',

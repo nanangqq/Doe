@@ -4,14 +4,16 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "build": "esbuild src/index.jsx --bundle --outfile=dist/index.js",
-    "start": "serve dist -l 3000",
+    "build:prod": "esbuild src/index.jsx --bundle --minify --outfile=dist/index.js",
+    "build:dev": "esbuild src/index.jsx --bundle --outfile=dist/index.js",
+    "start": "npm run build:dev && serve dist -l 3000",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "esbuild": "0.17.18",
+    "firebase": "^9.21.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
