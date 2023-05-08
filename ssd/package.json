@@ -1,0 +1,21 @@
+{
+  "name": "doe-ssd",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "esbuild src/index.jsx --bundle --outfile=dist/index.js",
+    "start": "serve dist -l 3000",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "esbuild": "0.17.18",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "serve": "^14.2.0"
+  }
+}
