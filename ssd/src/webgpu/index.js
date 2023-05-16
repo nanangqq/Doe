@@ -1,19 +1,28 @@
 import { checkWebGPUSupport } from './helper'
 import { defaultShader } from './shaders'
 
-export const createTriangle = async (color = '(1.0,1.0,1.0,1.0)') => {
+const useWebGPU = async (canvasId = 'canvas-webgpu') => {
   const checkgpu = checkWebGPUSupport
   if (checkgpu.includes('Your current browser does not support WebGPU!')) {
     console.log(checkgpu)
     throw 'Your current browser does not support WebGPU!'
   }
 
-  const canvas = document.getElementById('canvas-webgpu')
+  const canvas = document.getElementById(canvasId)
   const adapter = await navigator.gpu?.requestAdapter()
+  // console.log(adapter)
   const device = await adapter?.requestDevice()
+  // console.log(device)
 
+  return [canvas, adapter, device]
+}
+
+export const createTriangle = async (color = '(1.0,1.0,1.0,1.0)') => {
+  const [canvas, adapter, device] = await useWebGPU()
   const context = canvas.getContext('webgpu')
-  const format = 'bgra8unorm'
+  // const format = 'bgra8unorm'
+  const format = navigator.gpu.getPreferredCanvasFormat()
+  console.log(format)
 
   context.configure({
     device: device,
@@ -64,4 +73,33 @@ export const createTriangle = async (color = '(1.0,1.0,1.0,1.0)') => {
   renderPass.end()
 
   device.queue.submit([commandEncoder.finish()])
+}
+
+export const clearCanvas = async () => {
+  const [canvas, adapter, device] = await useWebGPU()
+  const context = canvas.getContext('webgpu')
+  const format = navigator.gpu.getPreferredCanvasFormat()
+  // console.log(format)
+
+  context.configure({
+    device: device,
+    format: format,
+  })
+
+  const encoder = device.createCommandEncoder()
+
+  const pass = encoder.beginRenderPass({
+    colorAttachments: [
+      {
+        view: context.getCurrentTexture().createView(),
+        loadOp: 'clear',
+        storeOp: 'store',
+      },
+    ],
+  })
+
+  pass.end()
+
+  const commandBuffer = encoder.finish()
+  device.queue.submit([commandBuffer])
 }

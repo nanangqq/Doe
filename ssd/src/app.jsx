@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { createTriangle } from './webgpu'
+import { clearCanvas, createTriangle } from './webgpu'
 import { fbApp } from './fb'
 
 export default () => {
@@ -8,5 +8,11 @@ export default () => {
     createTriangle()
   }, [])
 
-  return <canvas id="canvas-webgpu" width="800" height="600" />
+  return (
+    <div>
+      <canvas id="canvas-webgpu" width="800" height="600" />
+      <br />
+      <button onClick={clearCanvas}>지우기</button>
+    </div>
+  )
 }
