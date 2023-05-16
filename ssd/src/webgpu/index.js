@@ -17,7 +17,7 @@ const useWebGPU = async (canvasId = 'canvas-webgpu') => {
   return [canvas, adapter, device]
 }
 
-export const createTriangle = async (color = '(1.0,1.0,1.0,1.0)') => {
+export const createTriangle = async (color = '(1.0, 1.0, 1.0, 0.5)') => {
   const [canvas, adapter, device] = await useWebGPU()
   const context = canvas.getContext('webgpu')
   // const format = 'bgra8unorm'
@@ -62,7 +62,7 @@ export const createTriangle = async (color = '(1.0,1.0,1.0,1.0)') => {
     colorAttachments: [
       {
         view: textureView,
-        clearValue: { r: 0.5, g: 0.5, b: 0.8, a: 1.0 }, //background color
+        clearValue: { r: 0, g: 0, b: 0.4, a: 1 }, //background color
         loadOp: 'clear',
         storeOp: 'store',
       },
