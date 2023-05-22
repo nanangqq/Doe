@@ -9,16 +9,21 @@ const useWebGPU = async (canvasId = 'canvas-webgpu') => {
   }
 
   const canvas = document.getElementById(canvasId)
+  if (!canvas) {
+    console.log('Canvas not found!')
+    throw 'Canvas not found!'
+  }
+
   const adapter = await navigator.gpu?.requestAdapter()
   // console.log(adapter)
   const device = await adapter?.requestDevice()
   // console.log(device)
 
-  return [canvas, adapter, device]
+  return { canvas, adapter, device }
 }
 
 export const createTriangle = async (color = '(1.0, 1.0, 1.0, 0.5)') => {
-  const [canvas, adapter, device] = await useWebGPU()
+  const { canvas, adapter, device } = await useWebGPU()
   const context = canvas.getContext('webgpu')
   // const format = 'bgra8unorm'
   const format = navigator.gpu.getPreferredCanvasFormat()
@@ -76,7 +81,7 @@ export const createTriangle = async (color = '(1.0, 1.0, 1.0, 0.5)') => {
 }
 
 export const clearCanvas = async () => {
-  const [canvas, adapter, device] = await useWebGPU()
+  const { canvas, adapter, device } = await useWebGPU()
   const context = canvas.getContext('webgpu')
   const format = navigator.gpu.getPreferredCanvasFormat()
   // console.log(format)
@@ -93,10 +98,120 @@ export const clearCanvas = async () => {
       {
         view: context.getCurrentTexture().createView(),
         loadOp: 'clear',
+        clearValue: { r: 0.5, g: 0.5, b: 0.5, a: 0 }, // New line
         storeOp: 'store',
       },
     ],
   })
+
+  pass.end()
+
+  const commandBuffer = encoder.finish()
+  device.queue.submit([commandBuffer])
+}
+
+export const createSquare = async () => {
+  const { canvas, adapter, device } = await useWebGPU()
+
+  const vertices = new Float32Array([
+    //   X,
+    //   Y,
+    -0.8,
+    -0.8, // Triangle 1 (Blue)
+    0.8,
+    -0.8,
+    0.8,
+    0.8,
+
+    -0.8,
+    -0.8, // Triangle 2 (Red)
+    0.8,
+    0.8,
+    -0.8,
+    0.8,
+  ])
+
+  const vertexBuffer = device.createBuffer({
+    label: 'Cell vertices',
+    size: vertices.byteLength,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+  })
+
+  device.queue.writeBuffer(vertexBuffer, /*bufferOffset=*/ 0, vertices)
+
+  const vertexBufferLayout = {
+    arrayStride: 8,
+    attributes: [
+      {
+        format: 'float32x2',
+        offset: 0,
+        shaderLocation: 0, // Position, see vertex shader
+      },
+    ],
+  }
+
+  const cellShaderModule = device.createShaderModule({
+    label: 'Cell shader',
+    code: `
+      // Your shader code will go here
+      @vertex
+      fn vertexMain(@location(0) pos: vec2f) -> @builtin(position) vec4f {
+        // return vec4f(pos.x, pos.y, 0, 1); // (X, Y, Z, W)
+        return vec4f(pos, 0, 1);
+      }
+
+      @fragment
+      fn fragmentMain() -> @location(0) vec4f {
+        return vec4f(1, 0, 0, 1);
+      }
+    `,
+  })
+
+  const format = navigator.gpu.getPreferredCanvasFormat()
+  // console.log(format)
+
+  const cellPipeline = device.createRenderPipeline({
+    label: 'Cell pipeline',
+    layout: 'auto',
+    vertex: {
+      module: cellShaderModule,
+      entryPoint: 'vertexMain',
+      buffers: [vertexBufferLayout],
+    },
+    fragment: {
+      module: cellShaderModule,
+      entryPoint: 'fragmentMain',
+      targets: [
+        {
+          format,
+        },
+      ],
+    },
+  })
+
+  const context = canvas.getContext('webgpu')
+
+  context.configure({
+    device: device,
+    format: format,
+  })
+
+  const encoder = device.createCommandEncoder()
+
+  const pass = encoder.beginRenderPass({
+    colorAttachments: [
+      {
+        view: context.getCurrentTexture().createView(),
+        loadOp: 'clear',
+        clearValue: { r: 0.5, g: 0.5, b: 0.5, a: 0 }, // New line
+        storeOp: 'store',
+      },
+    ],
+  })
+
+  pass.setPipeline(cellPipeline)
+  pass.setVertexBuffer(0, vertexBuffer)
+  pass.draw(vertices.length / 2) // 6 vertices
 
   pass.end()
 
