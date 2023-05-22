@@ -1,5 +1,5 @@
 export const defaultShader = (color) => {
-  const vertex = `
+  const vertex = /* wgsl */ `
         @vertex
         fn main(@builtin(vertex_index) VertexIndex: u32) -> @builtin(position) vec4<f32> {
             var pos = array<vec2<f32>, 3>(
@@ -10,7 +10,7 @@ export const defaultShader = (color) => {
         }
     `
 
-  const fragment = `
+  const fragment = /* wgsl */ `
         @fragment
         fn main() -> @location(0) vec4<f32> {
             return vec4<f32>${color};
@@ -21,7 +21,7 @@ export const defaultShader = (color) => {
 
 export const createSquareShader = () => ({
   label: 'Cell shader',
-  code: `
+  code: /* wgsl */ `
     // Your shader code will go here
     @vertex
     fn vertexMain(@location(0) pos: vec2f) -> @builtin(position) vec4f {
@@ -38,7 +38,7 @@ export const createSquareShader = () => ({
 
 export const createGridShader = () => ({
   label: 'Grid Cell shader',
-  code: `    
+  code: /* wgsl */ `    
     struct VertexOutput {
       @builtin(position) p: vec4f,
       @location(0) cell: vec2f,
@@ -82,7 +82,7 @@ export const createGridShader = () => ({
 
 export const createComputeShader = (WORKGROUP_SIZE = 8) => ({
   label: 'Game of Life simulation shader',
-  code: `
+  code: /* wgsl */ `
     @group(0) @binding(0) var<uniform> grid: vec2f;
 
     @group(0) @binding(1) var<storage> cellStateIn: array<u32>;
@@ -91,10 +91,6 @@ export const createComputeShader = (WORKGROUP_SIZE = 8) => ({
     fn cellActive(x: u32, y: u32) -> u32 {
       return cellStateIn[cellIndex(vec2(x, y))];
     }
-
-    // fn cellIndex(cell: vec2u) -> u32 {
-    //   return cell.y * u32(grid.x) + cell.x;
-    // }
 
     fn cellIndex(cell: vec2u) -> u32 {
       return (cell.y % u32(grid.y)) * u32(grid.x) +
