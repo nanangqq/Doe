@@ -1,7 +1,7 @@
 import { checkWebGPUSupport } from './helper'
 import { defaultShader, createSquareShader, createGridShader } from './shaders'
 
-const GRID_SIZE = 4
+const GRID_SIZE = 32
 
 const useWebGPU = async (canvasId = 'canvas-webgpu') => {
   const checkgpu = checkWebGPUSupport
@@ -132,7 +132,7 @@ export const createGrid = async () => {
   pass.setPipeline(cellPipeline)
   pass.setVertexBuffer(0, vertexBuffer)
   pass.setBindGroup(0, bindGroup)
-  pass.draw(vertices.length / 2) // 6 vertices
+  pass.draw(vertices.length / 2, GRID_SIZE * GRID_SIZE) // 6 vertices
 
   pass.end()
 
