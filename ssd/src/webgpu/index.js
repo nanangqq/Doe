@@ -123,7 +123,7 @@ export const createGrid = async () => {
       {
         view: context.getCurrentTexture().createView(),
         loadOp: 'clear',
-        clearValue: { r: 0.5, g: 0.5, b: 0.5, a: 0 }, // New line
+        // clearValue: { r: 0.5, g: 0.5, b: 0.5, a: 0 }, // New line
         storeOp: 'store',
       },
     ],

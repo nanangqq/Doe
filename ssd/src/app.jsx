@@ -10,7 +10,7 @@ export default () => {
 
   return (
     <div>
-      <canvas id="canvas-webgpu" width="600" height="600" />
+      <canvas id="canvas-webgpu" width="640" height="640" />
       <br />
       <button onClick={clearCanvas}>지우기</button>
       <button onClick={createSquare}>사각형</button>
