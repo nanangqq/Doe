@@ -1,3 +1,5 @@
+/// <reference types="@webgpu/types" />
+
 import { checkWebGPUSupport } from './helper'
 import {
   defaultShader,
@@ -17,23 +19,32 @@ const useWebGPU = async (canvasId = 'canvas-webgpu') => {
     throw 'Your current browser does not support WebGPU!'
   }
 
-  const canvas = document.getElementById(canvasId)
+  const canvas = document.getElementById(canvasId) as HTMLCanvasElement
   if (!canvas) {
     console.log('Canvas not found!')
     throw 'Canvas not found!'
+  }
+
+  const context = canvas.getContext('webgpu')
+  if (!context) {
+    console.log('Context not found!')
+    throw 'Context not found!'
   }
 
   const adapter = await navigator.gpu?.requestAdapter()
   // console.log(adapter)
   const device = await adapter?.requestDevice()
   // console.log(device)
+  if (!device) {
+    console.log('Device not found!')
+    throw 'Device not found!'
+  }
 
-  return { canvas, adapter, device }
+  return { canvas, context, adapter, device }
 }
 
 export const createGrid = async () => {
-  const { canvas, adapter, device } = await useWebGPU()
-  const context = canvas.getContext('webgpu')
+  const { context, device } = await useWebGPU()
   // const format = 'bgra8unorm'
   const format = navigator.gpu.getPreferredCanvasFormat()
 
@@ -69,7 +80,7 @@ export const createGrid = async () => {
 
   device.queue.writeBuffer(vertexBuffer, /*bufferOffset=*/ 0, vertices)
 
-  const vertexBufferLayout = {
+  const vertexBufferLayout: GPUVertexBufferLayout = {
     arrayStride: 8,
     attributes: [
       {
@@ -263,9 +274,8 @@ export const createGrid = async () => {
 }
 
 export const createTriangle = async (color = '(1.0, 1.0, 1.0, 0.5)') => {
-  const { canvas, adapter, device } = await useWebGPU()
-  const context = canvas.getContext('webgpu')
-  // const format = 'bgra8unorm'
+  const { context, device } = await useWebGPU()
+
   const format = navigator.gpu.getPreferredCanvasFormat()
   console.log(format)
 
@@ -321,10 +331,8 @@ export const createTriangle = async (color = '(1.0, 1.0, 1.0, 0.5)') => {
 }
 
 export const clearCanvas = async () => {
-  const { canvas, adapter, device } = await useWebGPU()
-  const context = canvas.getContext('webgpu')
+  const { context, device } = await useWebGPU()
   const format = navigator.gpu.getPreferredCanvasFormat()
-  // console.log(format)
 
   context.configure({
     device: device,
@@ -351,7 +359,7 @@ export const clearCanvas = async () => {
 }
 
 export const createSquare = async () => {
-  const { canvas, adapter, device } = await useWebGPU()
+  const { context, device } = await useWebGPU()
 
   const vertices = new Float32Array([
     //   X,
@@ -380,7 +388,7 @@ export const createSquare = async () => {
 
   device.queue.writeBuffer(vertexBuffer, /*bufferOffset=*/ 0, vertices)
 
-  const vertexBufferLayout = {
+  const vertexBufferLayout: GPUVertexBufferLayout = {
     arrayStride: 8,
     attributes: [
       {
@@ -414,8 +422,6 @@ export const createSquare = async () => {
       ],
     },
   })
-
-  const context = canvas.getContext('webgpu')
 
   context.configure({
     device: device,
