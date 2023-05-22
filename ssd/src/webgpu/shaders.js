@@ -39,6 +39,9 @@ export const createSquareShader = () => ({
 export const createGridShader = () => ({
   label: 'Grid Cell shader',
   code: `
+    @group(0) @binding(0) var<uniform> grid: vec2f;
+    @group(0) @binding(1) var<storage> cellState: array<u32>; // New!
+
     struct VertexInput {
       @location(0) pos: vec2f,
       @builtin(instance_index) instance: u32,
@@ -49,11 +52,10 @@ export const createGridShader = () => ({
       @location(0) cell: vec2f,
     };
   
-    @group(0) @binding(0) var<uniform> grid: vec2f;
-
     @vertex
     fn vertexMain(input: VertexInput) -> VertexOutput {
-      
+        let state = f32(cellState[input.instance]);
+
         // Add 1 to the position before dividing by the grid size.
         // let gridPos = (pos + 1) / grid;
         // let gridPos = (pos + 1) / grid - 1;
@@ -64,7 +66,7 @@ export const createGridShader = () => ({
         let cell = vec2f(i % grid.x, floor(i / grid.x));
         
         let cellOffset = cell / grid * 2; // Compute the offset to cell
-        let gridPos = (input.pos + 1) / grid - 1 + cellOffset; // Add it here!
+        let gridPos = (input.pos * state + 1) / grid - 1 + cellOffset; // Add it here!
 
         var output: VertexOutput;
         output.p = vec4f(gridPos, 0, 1);
@@ -81,7 +83,8 @@ export const createGridShader = () => ({
     fn fragmentMain(input: FragInput) -> @location(0) vec4f {
       // return vec4f(1, 0, 0, 1);
       // return vec4f(input.cell, 0, 1);
-      return vec4f(input.cell/grid, 1-(input.cell.x+input.cell.y)/grid.x, 1);
+      let rg_channel = input.cell / grid;
+      return vec4f(rg_channel, 1-(rg_channel.x + rg_channel.y), 1);
     }
   `,
 })

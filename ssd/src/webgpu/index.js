@@ -2,6 +2,7 @@ import { checkWebGPUSupport } from './helper'
 import { defaultShader, createSquareShader, createGridShader } from './shaders'
 
 const GRID_SIZE = 32
+const UPDATE_INTERVAL = 500 // Update every 200ms (5 times/sec)
 
 const useWebGPU = async (canvasId = 'canvas-webgpu') => {
   const checkgpu = checkWebGPUSupport
@@ -29,6 +30,50 @@ export const createGrid = async () => {
   const context = canvas.getContext('webgpu')
   // const format = 'bgra8unorm'
   const format = navigator.gpu.getPreferredCanvasFormat()
+
+  let step = 0 // Track how many simulation steps have been run
+
+  // Create an array representing the active state of each cell.
+  const cellStateArray = new Uint32Array(GRID_SIZE * GRID_SIZE)
+  // console.log(cellStateArray)
+
+  // Create a storage buffer to hold the cell state.
+  // const cellStateStorage = device.createBuffer({
+  //   label: 'Cell State',
+  //   size: cellStateArray.byteLength,
+  //   usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+  // })
+
+  // for (let i = 0; i < cellStateArray.length; i += 3) {
+  //   cellStateArray[i] = 1
+  // }
+  // device.queue.writeBuffer(cellStateStorage, 0, cellStateArray)
+
+  // Create two storage buffers to hold the cell state.
+  const cellStateStorage = [
+    device.createBuffer({
+      label: 'Cell State A',
+      size: cellStateArray.byteLength,
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+    }),
+    device.createBuffer({
+      label: 'Cell State B',
+      size: cellStateArray.byteLength,
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+    }),
+  ]
+
+  // Mark every third cell of the first grid as active.
+  for (let i = 0; i < cellStateArray.length; i += 3) {
+    cellStateArray[i] = 1
+  }
+  device.queue.writeBuffer(cellStateStorage[0], 0, cellStateArray)
+
+  // Mark every other cell of the second grid as active.
+  for (let i = 0; i < cellStateArray.length; i++) {
+    cellStateArray[i] = i % 2
+  }
+  device.queue.writeBuffer(cellStateStorage[1], 0, cellStateArray)
 
   // Create a uniform buffer that describes the grid.
   const uniformArray = new Float32Array([GRID_SIZE, GRID_SIZE])
@@ -100,44 +145,109 @@ export const createGrid = async () => {
     },
   })
 
-  const bindGroup = device.createBindGroup({
-    label: 'Cell renderer bind group',
-    layout: cellPipeline.getBindGroupLayout(0),
-    entries: [
-      {
-        binding: 0,
-        resource: { buffer: uniformBuffer },
-      },
-    ],
-  })
+  // const bindGroup = device.createBindGroup({
+  //   label: 'Cell renderer bind group',
+  //   layout: cellPipeline.getBindGroupLayout(0),
+  //   entries: [
+  //     {
+  //       binding: 0,
+  //       resource: { buffer: uniformBuffer },
+  //     },
+  //     {
+  //       binding: 1,
+  //       resource: { buffer: cellStateStorage },
+  //     },
+  //   ],
+  // })
+
+  const bindGroups = [
+    device.createBindGroup({
+      label: 'Cell renderer bind group A',
+      layout: cellPipeline.getBindGroupLayout(0),
+      entries: [
+        {
+          binding: 0,
+          resource: { buffer: uniformBuffer },
+        },
+        {
+          binding: 1,
+          resource: { buffer: cellStateStorage[0] },
+        },
+      ],
+    }),
+    device.createBindGroup({
+      label: 'Cell renderer bind group B',
+      layout: cellPipeline.getBindGroupLayout(0),
+      entries: [
+        {
+          binding: 0,
+          resource: { buffer: uniformBuffer },
+        },
+        {
+          binding: 1,
+          resource: { buffer: cellStateStorage[1] },
+        },
+      ],
+    }),
+  ]
 
   context.configure({
     device: device,
     format: format,
   })
 
-  const encoder = device.createCommandEncoder()
+  // const encoder = device.createCommandEncoder()
 
-  const pass = encoder.beginRenderPass({
-    colorAttachments: [
-      {
-        view: context.getCurrentTexture().createView(),
-        loadOp: 'clear',
-        // clearValue: { r: 0.5, g: 0.5, b: 0.5, a: 0 }, // New line
-        storeOp: 'store',
-      },
-    ],
-  })
+  // const pass = encoder.beginRenderPass({
+  //   colorAttachments: [
+  //     {
+  //       view: context.getCurrentTexture().createView(),
+  //       loadOp: 'clear',
+  //       // clearValue: { r: 0.5, g: 0.5, b: 0.5, a: 0 }, // New line
+  //       storeOp: 'store',
+  //     },
+  //   ],
+  // })
 
-  pass.setPipeline(cellPipeline)
-  pass.setVertexBuffer(0, vertexBuffer)
-  pass.setBindGroup(0, bindGroup)
-  pass.draw(vertices.length / 2, GRID_SIZE * GRID_SIZE) // 6 vertices
+  // pass.setPipeline(cellPipeline)
+  // pass.setVertexBuffer(0, vertexBuffer)
+  // pass.setBindGroup(0, bindGroup)
+  // pass.draw(vertices.length / 2, GRID_SIZE * GRID_SIZE) // 6 vertices
 
-  pass.end()
+  // pass.end()
 
-  const commandBuffer = encoder.finish()
-  device.queue.submit([commandBuffer])
+  // const commandBuffer = encoder.finish()
+  // device.queue.submit([commandBuffer])
+
+  function updateGrid() {
+    step++ // Increment the step count
+
+    // Start a render pass
+    const encoder = device.createCommandEncoder()
+
+    const pass = encoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: context.getCurrentTexture().createView(),
+          loadOp: 'clear',
+          // clearValue: { r: 0.5, g: 0.5, b: 0.5, a: 0 }, // New line
+          storeOp: 'store',
+        },
+      ],
+    })
+
+    // Draw the grid.
+    pass.setPipeline(cellPipeline)
+    pass.setVertexBuffer(0, vertexBuffer)
+    pass.setBindGroup(0, bindGroups[step % 2]) // Updated!
+    pass.draw(vertices.length / 2, GRID_SIZE * GRID_SIZE)
+
+    // End the render pass and submit the command buffer
+    pass.end()
+    device.queue.submit([encoder.finish()])
+  }
+
+  setInterval(updateGrid, UPDATE_INTERVAL)
 }
 
 export const createTriangle = async (color = '(1.0, 1.0, 1.0, 0.5)') => {
