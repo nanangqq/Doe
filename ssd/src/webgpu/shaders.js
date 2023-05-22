@@ -38,53 +38,93 @@ export const createSquareShader = () => ({
 
 export const createGridShader = () => ({
   label: 'Grid Cell shader',
-  code: `
-    @group(0) @binding(0) var<uniform> grid: vec2f;
-    @group(0) @binding(1) var<storage> cellState: array<u32>; // New!
-
-    struct VertexInput {
-      @location(0) pos: vec2f,
-      @builtin(instance_index) instance: u32,
-    };
-    
+  code: `    
     struct VertexOutput {
       @builtin(position) p: vec4f,
       @location(0) cell: vec2f,
     };
+
+    @group(0) @binding(0) var<uniform> grid: vec2f;
+    @group(0) @binding(1) var<storage> cellState: array<u32>;
   
     @vertex
-    fn vertexMain(input: VertexInput) -> VertexOutput {
-        let state = f32(cellState[input.instance]);
-
-        // Add 1 to the position before dividing by the grid size.
-        // let gridPos = (pos + 1) / grid;
-        // let gridPos = (pos + 1) / grid - 1;
-
-        let i = f32(input.instance); // Save the instance_index as a float
+    fn vertexMain(@location(0) pos: vec2f, @builtin(instance_index) instance: u32) 
+      -> VertexOutput {
+        
+        let i = f32(instance); // Save the instance_index as a float
         
         // Compute the cell coordinate from the instance_index
         let cell = vec2f(i % grid.x, floor(i / grid.x));
         
-        let cellOffset = cell / grid * 2; // Compute the offset to cell
-        let gridPos = (input.pos * state + 1) / grid - 1 + cellOffset; // Add it here!
+        let state = f32(cellState[instance]);
+        let cellOffset = cell / grid * 2;
+        let gridPos = (pos * state + 1) / grid - 1 + cellOffset;
 
         var output: VertexOutput;
         output.p = vec4f(gridPos, 0, 1);
+        // output.cell = cell / grid;
         output.cell = cell;
         return output;
     }
 
     struct FragInput {
-      @location(0) cell: vec2f,
       @builtin(position) p: vec4f,
+      @location(0) cell: vec2f,
     };
     
     @fragment
     fn fragmentMain(input: FragInput) -> @location(0) vec4f {
-      // return vec4f(1, 0, 0, 1);
-      // return vec4f(input.cell, 0, 1);
-      let rg_channel = input.cell / grid;
-      return vec4f(rg_channel, 1-(rg_channel.x + rg_channel.y), 1);
+      let c = input.cell / grid;
+      return vec4f(c, 1.0 - (c.x + c.y), 1);
     }
-  `,
+    `,
+})
+
+export const createComputeShader = (WORKGROUP_SIZE = 8) => ({
+  label: 'Game of Life simulation shader',
+  code: `
+    @group(0) @binding(0) var<uniform> grid: vec2f;
+
+    @group(0) @binding(1) var<storage> cellStateIn: array<u32>;
+    @group(0) @binding(2) var<storage, read_write> cellStateOut: array<u32>;
+
+    fn cellActive(x: u32, y: u32) -> u32 {
+      return cellStateIn[cellIndex(vec2(x, y))];
+    }
+
+    // fn cellIndex(cell: vec2u) -> u32 {
+    //   return cell.y * u32(grid.x) + cell.x;
+    // }
+
+    fn cellIndex(cell: vec2u) -> u32 {
+      return (cell.y % u32(grid.y)) * u32(grid.x) +
+             (cell.x % u32(grid.x));
+    }
+
+    @compute
+    @workgroup_size(${WORKGROUP_SIZE}, ${WORKGROUP_SIZE})
+    fn computeMain(@builtin(global_invocation_id) cell: vec3u) {
+      let activeNeighbors = cellActive(cell.x+1, cell.y+1) +
+                            cellActive(cell.x+1, cell.y) +
+                            cellActive(cell.x+1, cell.y-1) +
+                            cellActive(cell.x, cell.y-1) +
+                            cellActive(cell.x-1, cell.y-1) +
+                            cellActive(cell.x-1, cell.y) +
+                            cellActive(cell.x-1, cell.y+1) +
+                            cellActive(cell.x, cell.y+1);
+      let i = cellIndex(cell.xy);
+
+      // Conway's game of life rules:
+      switch activeNeighbors {
+        case 2: { // Active cells with 2 neighbors stay active.
+          cellStateOut[i] = cellStateIn[i];
+        }
+        case 3: { // Cells with 3 neighbors become or stay active.
+          cellStateOut[i] = 1;
+        }
+        default: { // Cells with < 2 or > 3 neighbors become inactive.
+          cellStateOut[i] = 0;
+        }
+      }
+    }`,
 })
