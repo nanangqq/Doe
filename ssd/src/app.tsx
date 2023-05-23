@@ -1,5 +1,6 @@
 import * as React from 'react'
-import { clearCanvas, createTriangle, createSquare, createGrid } from './webgpu'
+import { clearCanvas, createTriangle, createSquare } from './webgpu'
+import { createGrid, useCanvasGridCheckEvent } from './webgpu/grid'
 import { fbApp } from './fb'
 
 export default () => {
@@ -14,7 +15,13 @@ export default () => {
       <br />
       <button onClick={clearCanvas}>지우기</button>
       <button onClick={createSquare}>사각형</button>
-      <button onClick={createGrid}>그리드</button>
+      <button
+        onClick={() => {
+          createGrid()
+        }}
+      >
+        그리드
+      </button>
     </div>
   )
 }
