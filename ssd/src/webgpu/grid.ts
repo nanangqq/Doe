@@ -21,6 +21,9 @@ export const useCanvasGridCheckEvent = async (render) => {
     const y = e.offsetY
     const cellX = Math.floor((x / CANVAS_SIZE) * GRID_SIZE)
     const cellY = 31 - Math.floor((y / CANVAS_SIZE) * GRID_SIZE)
+    if (cellX === SELECTED_CELL[0] && cellY === SELECTED_CELL[1]) {
+      return
+    }
     console.log(cellX, cellY, IS_MOUSE_ON_CANVAS)
     SELECTED_CELL[0] = cellX
     SELECTED_CELL[1] = cellY
@@ -128,6 +131,11 @@ export const createGrid = async () => {
         visibility: GPUShaderStage.COMPUTE,
         buffer: { type: 'storage' }, // Cell state output buffer
       },
+      {
+        binding: 3,
+        visibility: GPUShaderStage.VERTEX | GPUShaderStage.COMPUTE,
+        buffer: { type: 'read-only-storage' }, // Cell state input buffer
+      },
     ],
   })
 
@@ -234,25 +242,13 @@ export const createGrid = async () => {
   const cellBoxArray = new Float32Array(SELECTED_CELL)
 
   // Create two storage buffers to hold the cell state.
-  const cellStateStorage = [
-    device.createBuffer({
-      label: 'Cell State A',
-      size: cellStateArray.byteLength,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-    }),
-    device.createBuffer({
-      label: 'Cell State B',
-      size: cellStateArray.byteLength,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-    }),
-  ]
+  const cellBoxArrayStorage = device.createBuffer({
+    label: 'Cell Box Array',
+    size: cellBoxArray.byteLength,
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+  })
 
-  // Set each cell to a random state, then copy the JavaScript array into
-  // the storage buffer.
-  for (let i = 0; i < cellStateArray.length; ++i) {
-    cellStateArray[i] = Math.random() > 0.6 ? 1 : 0
-  }
-  device.queue.writeBuffer(cellStateStorage[0], 0, cellStateArray)
+  device.queue.writeBuffer(cellBoxArrayStorage, 0, cellBoxArray)
 
   const bindGroups = [
     device.createBindGroup({
@@ -270,6 +266,10 @@ export const createGrid = async () => {
         {
           binding: 2,
           resource: { buffer: cellStateStorage[1] },
+        },
+        {
+          binding: 3,
+          resource: { buffer: cellBoxArrayStorage },
         },
       ],
     }),
@@ -289,6 +289,10 @@ export const createGrid = async () => {
           binding: 2,
           resource: { buffer: cellStateStorage[0] },
         },
+        {
+          binding: 3,
+          resource: { buffer: cellBoxArrayStorage },
+        },
       ],
     }),
   ]
@@ -296,13 +300,16 @@ export const createGrid = async () => {
   let step = 0 // Track how many simulation steps have been run
 
   function updateGrid() {
+    const cellBoxArray = new Float32Array(SELECTED_CELL)
+    device.queue.writeBuffer(cellBoxArrayStorage, 0, cellBoxArray)
+
     const encoder = device.createCommandEncoder()
 
     // Start a compute pass
     const computePass = encoder.beginComputePass()
 
-    computePass.setPipeline(simulationPipeline),
-      computePass.setBindGroup(0, bindGroups[step % 2])
+    computePass.setPipeline(simulationPipeline)
+    computePass.setBindGroup(0, bindGroups[step % 2])
     const workgroupCount = Math.ceil(GRID_SIZE / WORKGROUP_SIZE)
     computePass.dispatchWorkgroups(workgroupCount, workgroupCount)
     computePass.end()
@@ -326,6 +333,7 @@ export const createGrid = async () => {
     pass.setVertexBuffer(0, vertexBuffer)
     pass.draw(vertices.length / 2, GRID_SIZE * GRID_SIZE)
 
+    // Draw the cell box.
     pass.setPipeline(cellBoxPipeline)
     pass.setVertexBuffer(0, cellBoxBuffer)
     pass.draw(5)

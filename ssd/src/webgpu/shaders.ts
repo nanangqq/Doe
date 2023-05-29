@@ -22,10 +22,19 @@ export const defaultShader = (color) => {
 export const createCellBoxShader = () => ({
   label: 'Cell box shader',
   code: /* wgsl */ `
+    @group(0) @binding(0) var<uniform> grid: vec2f;
+    @group(0) @binding(3) var<storage> selectedCell: array<f32>;
+
     @vertex
     fn vertexMain(@location(0) pos: vec2f) -> @builtin(position) vec4f {
-      // return vec4f(pos.x, pos.y, 0, 1); // (X, Y, Z, W)
-      return vec4f(pos, 0, 1);
+
+      // Compute the cell coordinate from the instance_index
+      let cell = vec2f(selectedCell[0], selectedCell[1]);
+        
+      let cellOffset = cell / grid * 2;
+      let gridPos = (pos + 1) / grid - 1 + cellOffset;
+
+      return vec4f(gridPos, 0, 1);
     }
 
     @fragment
