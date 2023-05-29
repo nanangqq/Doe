@@ -1,27 +1,31 @@
-import * as React from 'react'
-import { clearCanvas, createTriangle, createSquare } from './webgpu'
-import { createGrid, useCanvasGridCheckEvent } from './webgpu/grid'
+import React, { useEffect } from 'react'
 import { fbApp } from './fb'
+import TestPage from './pages/test'
+import {
+  Route,
+  RouterProvider,
+  createBrowserRouter,
+  createRoutesFromElements,
+} from 'react-router-dom'
+import ErrorPage from './pages/error'
+import RootPage from './pages/root'
+
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <RootPage />,
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: 'test',
+    element: <TestPage />,
+  },
+  {
+    path: 'test/bb',
+    element: <div>hey</div>,
+  },
+])
 
 export default () => {
-  React.useEffect(() => {
-    // console.log(fbApp)
-    createTriangle()
-  }, [])
-
-  return (
-    <div>
-      <canvas id="canvas-webgpu" width="640" height="640" />
-      <br />
-      <button onClick={clearCanvas}>지우기</button>
-      <button onClick={createSquare}>사각형</button>
-      <button
-        onClick={() => {
-          createGrid()
-        }}
-      >
-        그리드
-      </button>
-    </div>
-  )
+  return <RouterProvider router={router} />
 }

@@ -39,7 +39,7 @@ export const createCellBoxShader = () => ({
 
     @fragment
     fn fragmentMain() -> @location(0) vec4f {
-      return vec4f(0.5, 0.5, 1, 1);
+      return vec4f(1, 1, 1, 1);
     }
   `,
 })
