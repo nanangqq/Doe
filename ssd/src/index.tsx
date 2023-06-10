@@ -11,6 +11,9 @@ const root = createRoot(rootElement)
 const GlobalStyle = createGlobalStyle`
   ${reset}
   /* other styles */
+  body {
+    overflow: hidden;
+  }
 `
 
 root.render(
