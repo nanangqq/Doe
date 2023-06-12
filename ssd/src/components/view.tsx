@@ -137,7 +137,8 @@ export default function ViewComponent({
       width={width || '100%'}
       height={height || '100%'}
     >
-      <canvas id="view-canvas" style={{ width: '100%', height: '100%' }} />
+      {/* <canvas id="view-canvas" style={{ width: '100%', height: '100%' }} /> */}
+      <canvas id="view-canvas" width="100%" height="100%" />
     </DefaultViewContainer>
   )
 }
