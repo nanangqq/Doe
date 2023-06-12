@@ -2,10 +2,11 @@ export const defaultShader = (color) => {
   const vertex = /* wgsl */ `
         @vertex
         fn main(@builtin(vertex_index) VertexIndex: u32) -> @builtin(position) vec4<f32> {
+            let h = sqrt(3.0)*0.5;
             var pos = array<vec2<f32>, 3>(
-                vec2<f32>(0.0, 0.5),
-                vec2<f32>(-0.5, -0.5),
-                vec2<f32>(0.5, -0.5));
+                vec2<f32>(0.0, h*0.5),
+                vec2<f32>(-0.5, -h*0.5),
+                vec2<f32>(0.5, -h*0.5));
             return vec4<f32>(pos[VertexIndex], 0.0, 1.0);
         }
     `
@@ -148,4 +149,21 @@ export const createComputeShader = (WORKGROUP_SIZE = 8) => ({
         }
       }
     }`,
+})
+
+export const createPolygonShader = () => ({
+  label: 'pol shader',
+  code: /* wgsl */ `
+    // Your shader code will go here
+    @vertex
+    fn vertexMain(@location(0) pos: vec2f) -> @builtin(position) vec4f {
+      // return vec4f(pos.x, pos.y, 0, 1); // (X, Y, Z, W)
+      return vec4f(pos*0.9, 0, 1);
+    }
+
+    @fragment
+    fn fragmentMain() -> @location(0) vec4f {
+      return vec4f(1, 1, 1, 1);
+    }
+  `,
 })

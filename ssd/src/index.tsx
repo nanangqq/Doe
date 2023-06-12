@@ -14,6 +14,10 @@ const GlobalStyle = createGlobalStyle`
   body {
     overflow: hidden;
   }
+
+  .view-container {
+    background-color: #2a3538;
+  }
 `
 
 root.render(
