@@ -1,8 +1,10 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import styled from 'styled-components'
+import { Feature, Point, Polygon } from 'geojson'
+import { v4 } from 'uuid'
+
 import { useWebGPU } from '../webgpu/helper'
 import testdata from '../geo/testdata'
-import { Feature, Point, Polygon } from 'geojson'
 import { createPolygonShader } from '../webgpu/shaders'
 
 export default function ViewComponent({
@@ -10,15 +12,31 @@ export default function ViewComponent({
   height,
   unit = 'mm',
 }: {
-  width?: string
-  height?: string
+  width: string
+  height: string
   unit?: 'mm' | 'inch'
 }) {
+  const canvasId = useMemo(() => `view-canvas-${v4()}`, [])
+  const [isMouseOnCanvas, setIsMouseOnCanvas] = useState(false)
+  const [mousePosition, setMousePosition] = useState<[number, number]>([0, 0])
+
+  useEffect(() => {
+    console.log(mousePosition)
+  }, mousePosition)
+
   const init = () => {
-    useWebGPU('view-canvas').then((res) => {
+    useWebGPU(canvasId).then((res) => {
       const { canvas, context, adapter, device } = res
+      // console.log(canvas.width, canvas.height)
+      // canvas.addEventListener('mousemove', (e) => {
+      //   setIsMouseOnCanvas(true)
+      //   const x = (e.offsetX - canvas.width / 2) / (canvas.width / 2)
+      //   const y = (-e.offsetY + canvas.height / 2) / (canvas.height / 2)
+      //   // console.log(x, y)
+
+      // })
       const format = navigator.gpu.getPreferredCanvasFormat()
-      console.log(format)
+
       context.configure({
         device: device,
         format: format,
@@ -134,11 +152,27 @@ export default function ViewComponent({
   return (
     <DefaultViewContainer
       className="view-container"
-      width={width || '100%'}
-      height={height || '100%'}
+      width={width}
+      height={height}
     >
-      {/* <canvas id="view-canvas" style={{ width: '100%', height: '100%' }} /> */}
-      <canvas id="view-canvas" width="100%" height="100%" />
+      <canvas
+        // 캔버스는 width, height를 단순 숫자값으로 받아서 px단위 크기로 사이즈가 정해짐.
+        // style로 사이즈 넣으면 기본사이즈에서 뻥튀기 되는 현상 나타남.
+        // 숫자 뒤에 %, px 등 단위 넣어져도 무시하고 숫자값으로 받아들임.
+        id={canvasId}
+        width={width}
+        height={height}
+        onMouseMove={(e) => {
+          setIsMouseOnCanvas(true)
+          const x =
+            (e.nativeEvent.offsetX - Number(width.replace('px', '')) / 2) /
+            (Number(width.replace('px', '')) / 2)
+          const y =
+            (-e.nativeEvent.offsetY + Number(height.replace('px', '')) / 2) /
+            (Number(height.replace('px', '')) / 2)
+          setMousePosition([x, y])
+        }}
+      />
     </DefaultViewContainer>
   )
 }

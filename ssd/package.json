@@ -18,13 +18,15 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.11.2",
     "styled-components": "^5.3.11",
-    "styled-reset": "^4.4.7"
+    "styled-reset": "^4.4.7",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@types/geojson": "^7946.0.10",
     "@types/react": "^18.2.7",
     "@types/react-dom": "^18.2.4",
     "@types/styled-components": "^5.1.26",
+    "@types/uuid": "^9.0.2",
     "@webgpu/types": "^0.1.32",
     "serve": "^14.2.0"
   }
