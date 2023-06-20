@@ -6,7 +6,7 @@
   "scripts": {
     "build:prod": "esbuild src/index.tsx --bundle --minify --outfile=dist/index.js",
     "dev": "esbuild src/index.tsx --bundle --watch --outfile=dist/index.js",
-    "start": "serve dist -l 3000 -s",
+    "start": "serve dist -l 3001 -s",
     "deploy": "npm run build:prod && firebase deploy"
   },
   "author": "",

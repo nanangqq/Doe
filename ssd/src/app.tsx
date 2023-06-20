@@ -9,6 +9,7 @@ import {
 } from 'react-router-dom'
 import ErrorPage from './pages/error'
 import RootPage from './pages/root'
+import IframePage from './pages/iframe'
 
 const router = createBrowserRouter([
   {
@@ -19,6 +20,10 @@ const router = createBrowserRouter([
   {
     path: 'test',
     element: <TestPage />,
+  },
+  {
+    path: 'iframe',
+    element: <IframePage />,
   },
   {
     path: 'test/bb',
