@@ -20,6 +20,7 @@
     "react-router-dom": "^6.11.2",
     "styled-components": "^5.3.11",
     "styled-reset": "^4.4.7",
+    "use-parent-data": "^1.1.1",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
