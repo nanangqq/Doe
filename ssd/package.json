@@ -1,35 +1,40 @@
 {
-  "name": "doe-ssd",
-  "version": "1.0.0",
-  "description": "",
-  "main": "dist/index.js",
-  "scripts": {
-    "build:prod": "esbuild src/index.tsx --bundle --minify --outfile=dist/index.js",
-    "dev": "esbuild src/index.tsx --bundle --watch --outfile=dist/index.js",
-    "start": "serve dist -l 3001 -s",
-    "deploy": "npm run build:prod && firebase deploy"
-  },
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "axios": "^1.4.0",
-    "esbuild": "0.17.18",
-    "firebase": "^9.21.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.11.2",
-    "styled-components": "^5.3.11",
-    "styled-reset": "^4.4.7",
-    "use-parent-data": "^1.1.1",
-    "uuid": "^9.0.0"
-  },
-  "devDependencies": {
-    "@types/geojson": "^7946.0.10",
-    "@types/react": "^18.2.7",
-    "@types/react-dom": "^18.2.4",
-    "@types/styled-components": "^5.1.26",
-    "@types/uuid": "^9.0.2",
-    "@webgpu/types": "^0.1.32",
-    "serve": "^14.2.0"
-  }
+    "name": "doe-ssd",
+    "version": "1.0.0",
+    "description": "",
+    "main": "dist/index.js",
+    "scripts": {
+        "build:prod": "esbuild src/index.tsx --bundle --minify --outfile=dist/index.js",
+        "dev": "esbuild src/index.tsx --bundle --watch --outfile=dist/index.js",
+        "start": "serve dist -l 3001 -s",
+        "deploy": "npm run build:prod && firebase deploy"
+    },
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "axios": "^1.4.0",
+        "esbuild": "0.17.18",
+        "firebase": "^9.21.0",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "react-router-dom": "^6.11.2",
+        "styled-components": "^5.3.11",
+        "styled-reset": "^4.4.7",
+        "uuid": "^9.0.0"
+    },
+    "devDependencies": {
+        "@types/geojson": "^7946.0.10",
+        "@types/react": "^18.2.7",
+        "@types/react-dom": "^18.2.4",
+        "@types/styled-components": "^5.1.26",
+        "@types/uuid": "^9.0.2",
+        "@webgpu/types": "^0.1.32",
+        "serve": "^14.2.0"
+    },
+    "prettier": {
+        "semi": false,
+        "singleQuote": true,
+        "trailingComma": "all",
+        "tabWidth": 4
+    }
 }
