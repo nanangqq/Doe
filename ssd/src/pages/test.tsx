@@ -6,18 +6,18 @@ import ViewComponent from '../components/view'
 // import { Outlet } from 'react-router-dom'
 
 export default function TestPage() {
-  // useEffect(() => {
-  //   createTriangle()
-  // }, [])
+    // useEffect(() => {
+    //   createTriangle()
+    // }, [])
 
-  return (
-    <div style={{ marginLeft: 4 }}>
-      {/* <ViewComponent width="90%" height="30vh" /> */}
-      <ViewComponent width="640px" height="640px" />
-      <ViewComponent width="640px" height="640px" />
-      <br />
+    return (
+        <div style={{ marginLeft: 4 }}>
+            {/* <ViewComponent width="90%" height="30vh" /> */}
+            <ViewComponent width="640px" height="640px" />
+            {/* <ViewComponent width="640px" height="640px" /> */}
+            <br />
 
-      {/* <Link to="/test/route-error">route-error</Link>
+            {/* <Link to="/test/route-error">route-error</Link>
       <br />
       <canvas id="canvas-webgpu" width="640" height="640" />
       <br />
@@ -30,9 +30,9 @@ export default function TestPage() {
       >
         그리드
       </button> */}
-      {/* <div id="chilren">
+            {/* <div id="chilren">
         <Outlet />
       </div> */}
-    </div>
-  )
+        </div>
+    )
 }

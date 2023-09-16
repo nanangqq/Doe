@@ -1,5 +1,5 @@
 export const defaultShader = (color) => {
-  const vertex = /* wgsl */ `
+    const vertex = /* wgsl */ `
         @vertex
         fn main(@builtin(vertex_index) VertexIndex: u32) -> @builtin(position) vec4<f32> {
             let h = sqrt(3.0)*0.5;
@@ -11,18 +11,18 @@ export const defaultShader = (color) => {
         }
     `
 
-  const fragment = /* wgsl */ `
+    const fragment = /* wgsl */ `
         @fragment
         fn main() -> @location(0) vec4<f32> {
             return vec4<f32>${color};
         }
     `
-  return { vertex, fragment }
+    return { vertex, fragment }
 }
 
 export const createCellBoxShader = () => ({
-  label: 'Cell box shader',
-  code: /* wgsl */ `
+    label: 'Cell box shader',
+    code: /* wgsl */ `
     @group(0) @binding(0) var<uniform> grid: vec2f;
     @group(0) @binding(3) var<storage> selectedCell: array<f32>;
 
@@ -46,8 +46,8 @@ export const createCellBoxShader = () => ({
 })
 
 export const createSquareShader = () => ({
-  label: 'Cell shader',
-  code: /* wgsl */ `
+    label: 'Cell shader',
+    code: /* wgsl */ `
     // Your shader code will go here
     @vertex
     fn vertexMain(@location(0) pos: vec2f) -> @builtin(position) vec4f {
@@ -63,8 +63,8 @@ export const createSquareShader = () => ({
 })
 
 export const createGridShader = () => ({
-  label: 'Grid Cell shader',
-  code: /* wgsl */ `    
+    label: 'Grid Cell shader',
+    code: /* wgsl */ `    
     struct VertexOutput {
       @builtin(position) p: vec4f,
       @location(0) cell: vec2f,
@@ -107,8 +107,8 @@ export const createGridShader = () => ({
 })
 
 export const createComputeShader = (WORKGROUP_SIZE = 8) => ({
-  label: 'Game of Life simulation shader',
-  code: /* wgsl */ `
+    label: 'Game of Life simulation shader',
+    code: /* wgsl */ `
     @group(0) @binding(0) var<uniform> grid: vec2f;
 
     @group(0) @binding(1) var<storage> cellStateIn: array<u32>;
@@ -152,9 +152,12 @@ export const createComputeShader = (WORKGROUP_SIZE = 8) => ({
 })
 
 export const createPolygonShader = () => ({
-  label: 'pol shader',
-  code: /* wgsl */ `
+    label: 'pol shader',
+    code: /* wgsl */ `
     // Your shader code will go here
+    @group(0) @binding(0) var<uniform> gb: vec2f;
+    @group(0) @binding(1) var<storage> mousePosition: vec2f;
+
     @vertex
     fn vertexMain(@location(0) pos: vec2f) -> @builtin(position) vec4f {
       // return vec4f(pos.x, pos.y, 0, 1); // (X, Y, Z, W)
@@ -163,7 +166,8 @@ export const createPolygonShader = () => ({
 
     @fragment
     fn fragmentMain() -> @location(0) vec4f {
-      return vec4f(1, 1, 1, 1);
+      // return vec4f(1, gb, 1);
+      return vec4f(1, mousePosition, 1);
     }
   `,
 })

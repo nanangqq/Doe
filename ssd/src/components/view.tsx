@@ -29,7 +29,7 @@ const createRenderer = async (canvasId: string) => {
     const pt = fc.features[0] as Feature<Point>
 
     const vertices = new Float32Array(pol.geometry.coordinates[0].flat())
-    // console.log(vertices)
+    console.log(vertices)
     const polVertsBuffer = device.createBuffer({
         size: vertices.byteLength,
         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
@@ -48,6 +48,24 @@ const createRenderer = async (canvasId: string) => {
         ],
     }
 
+    // Create a uniform buffer that describes some stage value.
+    const uniformArray = new Float32Array([1, 0])
+    const uniformBuffer = device.createBuffer({
+        label: 'Uniform',
+        size: uniformArray.byteLength,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    })
+    device.queue.writeBuffer(uniformBuffer, 0, uniformArray)
+
+    // create a storage buffer to store mouse position
+    const mousePositionArray = new Float32Array([0, 0])
+    const mousePositionStorage = device.createBuffer({
+        label: 'mousePosition',
+        size: mousePositionArray.byteLength,
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+    })
+    device.queue.writeBuffer(mousePositionStorage, 0, mousePositionArray)
+
     const bindGroupLayout = device.createBindGroupLayout({
         label: 'pol Bind Group Layout',
         entries: [
@@ -56,29 +74,32 @@ const createRenderer = async (canvasId: string) => {
                 visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
                 buffer: {}, // uniform buffer
             },
+            {
+                binding: 1,
+                visibility:
+                    GPUShaderStage.VERTEX |
+                    GPUShaderStage.FRAGMENT |
+                    GPUShaderStage.COMPUTE,
+                buffer: { type: 'read-only-storage' }, // Cell state input buffer
+            },
         ],
     })
 
-    // Create a uniform buffer that describes the grid.
-    const uniformArray = new Float32Array([0, 0])
-    // console.log(uniformArray)
-    const uniformBuffer = device.createBuffer({
-        label: 'Grid Uniforms',
-        size: uniformArray.byteLength,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    })
-    // console.log(uniformBuffer)
-    device.queue.writeBuffer(uniformBuffer, 0, uniformArray)
     const bindGroup = device.createBindGroup({
-        label: 'Cell renderer bind group A',
+        label: 'renderer bind group',
         layout: bindGroupLayout,
         entries: [
             {
                 binding: 0,
                 resource: { buffer: uniformBuffer },
             },
+            {
+                binding: 1,
+                resource: { buffer: mousePositionStorage },
+            },
         ],
     })
+
     const pipelineLayout = device.createPipelineLayout({
         label: 'pol Pipeline Layout',
         bindGroupLayouts: [bindGroupLayout],
@@ -108,18 +129,24 @@ const createRenderer = async (canvasId: string) => {
         },
     })
 
-    const renderer = () => {
+    const renderer = (mousePosition: [number, number] = [0, 0]) => {
+        const [x, y] = mousePosition
         const encoder = device.createCommandEncoder()
         const pass = encoder.beginRenderPass({
             colorAttachments: [
                 {
                     view: context.getCurrentTexture().createView(),
                     loadOp: 'clear',
-                    clearValue: { r: 0.5, g: 0.5, b: 0.5, a: 1 }, // New line
+                    clearValue: { r: 0.5, g: 0.5, b: 0.5, a: 1 },
                     storeOp: 'store',
                 },
             ],
         })
+        device.queue.writeBuffer(
+            mousePositionStorage,
+            0,
+            new Float32Array(mousePosition),
+        )
 
         pass.setBindGroup(0, bindGroup)
         pass.setPipeline(polPipeline)
@@ -144,7 +171,9 @@ export default function ViewComponent({
 }) {
     const canvasId = useMemo(() => `view-canvas-${v4()}`, [])
     const [isMouseOnCanvas, setIsMouseOnCanvas] = useState(false)
-    const [renderer, setRenderer] = useState<() => void>(() => () => {})
+    const [renderer, setRenderer] = useState<
+        Awaited<ReturnType<typeof createRenderer>>
+    >(() => () => {})
     const [mousePosition, setMousePosition] = useState<[number, number]>([0, 0])
 
     const init = () => {
@@ -154,8 +183,8 @@ export default function ViewComponent({
 
     useEffect(() => {
         console.log(mousePosition)
-        console.log(renderer)
-        renderer()
+        // console.log(renderer)
+        renderer(mousePosition)
     }, [mousePosition, renderer])
 
     return (
