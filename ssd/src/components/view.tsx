@@ -3,20 +3,13 @@ import styled from 'styled-components'
 import { Feature, Point, Polygon } from 'geojson'
 import { v4 } from 'uuid'
 
-import { useWebGPU } from '../webgpu/helper'
+import { createTestPolygonDrawingSet, useWebGPU } from '../webgpu/helper'
 import testdata from '../geo/testdata'
 import { createPolygonShader } from '../webgpu/shaders'
 
 const createRenderer = async (canvasId: string) => {
     const { canvas, context, adapter, device } = await useWebGPU(canvasId)
     // console.log(canvas.width, canvas.height)
-    // canvas.addEventListener('mousemove', (e) => {
-    //   setIsMouseOnCanvas(true)
-    //   const x = (e.offsetX - canvas.width / 2) / (canvas.width / 2)
-    //   const y = (-e.offsetY + canvas.height / 2) / (canvas.height / 2)
-    //   // console.log(x, y)
-
-    // })
     const format = navigator.gpu.getPreferredCanvasFormat()
 
     context.configure({
@@ -26,16 +19,16 @@ const createRenderer = async (canvasId: string) => {
 
     const fc = testdata()
     const pol = fc.features[1] as Feature<Polygon>
-    const pt = fc.features[0] as Feature<Point>
+    // const pt = fc.features[0] as Feature<Point>
 
     const vertices = new Float32Array(pol.geometry.coordinates[0].flat())
-    console.log(vertices)
-    const polVertsBuffer = device.createBuffer({
+
+    const vertsBuffer = device.createBuffer({
         size: vertices.byteLength,
         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     })
 
-    device.queue.writeBuffer(polVertsBuffer, 0, vertices)
+    device.queue.writeBuffer(vertsBuffer, 0, vertices)
 
     const vertexBufferLayout: GPUVertexBufferLayout = {
         arrayStride: 8,
@@ -49,7 +42,7 @@ const createRenderer = async (canvasId: string) => {
     }
 
     // Create a uniform buffer that describes some stage value.
-    const uniformArray = new Float32Array([1, 0])
+    const uniformArray = new Float32Array([0, 1, 0])
     const uniformBuffer = device.createBuffer({
         label: 'Uniform',
         size: uniformArray.byteLength,
@@ -67,7 +60,7 @@ const createRenderer = async (canvasId: string) => {
     device.queue.writeBuffer(mousePositionStorage, 0, mousePositionArray)
 
     const bindGroupLayout = device.createBindGroupLayout({
-        label: 'pol Bind Group Layout',
+        label: 'Bind Group Layout',
         entries: [
             {
                 binding: 0,
@@ -86,7 +79,7 @@ const createRenderer = async (canvasId: string) => {
     })
 
     const bindGroup = device.createBindGroup({
-        label: 'renderer bind group',
+        label: 'bind group',
         layout: bindGroupLayout,
         entries: [
             {
@@ -100,18 +93,47 @@ const createRenderer = async (canvasId: string) => {
         ],
     })
 
+    const {
+        polVertsBuffer,
+        polBindGroupLayout,
+        polBindGroup,
+        polShaderModule,
+    } = createTestPolygonDrawingSet(pol, device)
+
     const pipelineLayout = device.createPipelineLayout({
-        label: 'pol Pipeline Layout',
-        bindGroupLayouts: [bindGroupLayout],
+        label: 'Pipeline Layout',
+        bindGroupLayouts: [bindGroupLayout, polBindGroupLayout],
     })
 
-    const polShaderModule = device.createShaderModule(createPolygonShader())
+    const shaderModule = device.createShaderModule(createPolygonShader())
 
-    const polPipeline = device.createRenderPipeline({
-        label: 'pol pipeline',
+    const pipeline = device.createRenderPipeline({
+        label: 'pipeline',
         layout: pipelineLayout,
         vertex: {
             module: polShaderModule,
+            entryPoint: 'vertexMain',
+            buffers: [vertexBufferLayout],
+        },
+        fragment: {
+            module: polShaderModule,
+            entryPoint: 'fragmentMain',
+            targets: [
+                {
+                    format,
+                },
+            ],
+        },
+        primitive: {
+            topology: 'line-strip',
+        },
+    })
+
+    const pipeline2 = device.createRenderPipeline({
+        label: 'pipeline2',
+        layout: pipelineLayout,
+        vertex: {
+            module: shaderModule,
             entryPoint: 'vertexMain',
             buffers: [vertexBufferLayout],
         },
@@ -149,11 +171,40 @@ const createRenderer = async (canvasId: string) => {
         )
 
         pass.setBindGroup(0, bindGroup)
-        pass.setPipeline(polPipeline)
+        pass.setBindGroup(1, polBindGroup)
         pass.setVertexBuffer(0, polVertsBuffer)
+        pass.setVertexBuffer(1, vertsBuffer)
+
+        pass.setPipeline(pipeline)
         pass.draw(5)
 
         pass.end()
+
+        const pass2 = encoder.beginRenderPass({
+            colorAttachments: [
+                {
+                    view: context.getCurrentTexture().createView(),
+                    loadOp: 'load',
+                    storeOp: 'store',
+                },
+            ],
+        })
+        device.queue.writeBuffer(
+            mousePositionStorage,
+            0,
+            new Float32Array(mousePosition),
+        )
+
+        pass2.setBindGroup(0, bindGroup)
+        pass2.setBindGroup(1, polBindGroup)
+        pass2.setVertexBuffer(0, polVertsBuffer)
+        pass2.setVertexBuffer(1, vertsBuffer)
+
+        pass2.setPipeline(pipeline2)
+        pass2.draw(5)
+
+        pass2.end()
+
         device.queue.submit([encoder.finish()])
     }
 

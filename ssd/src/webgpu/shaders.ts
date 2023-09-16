@@ -151,12 +151,11 @@ export const createComputeShader = (WORKGROUP_SIZE = 8) => ({
     }`,
 })
 
-export const createPolygonShader = () => ({
-    label: 'pol shader',
+export const createDefaultPolygonShader = () => ({
+    label: 'pol default shader',
     code: /* wgsl */ `
     // Your shader code will go here
-    @group(0) @binding(0) var<uniform> gb: vec2f;
-    @group(0) @binding(1) var<storage> mousePosition: vec2f;
+    @group(0) @binding(0) var<uniform> rgb: vec3f;
 
     @vertex
     fn vertexMain(@location(0) pos: vec2f) -> @builtin(position) vec4f {
@@ -166,8 +165,26 @@ export const createPolygonShader = () => ({
 
     @fragment
     fn fragmentMain() -> @location(0) vec4f {
-      // return vec4f(1, gb, 1);
-      return vec4f(1, mousePosition, 1);
+      return vec4f(rgb, 1);
     }
   `,
+})
+
+export const createPolygonShader = () => ({
+    label: 'pol shader',
+    code: /* wgsl */ `
+  // Your shader code will go here
+  @group(1) @binding(1) var<storage> mousePosition: vec2f;
+
+  @vertex
+  fn vertexMain(@location(0) pos: vec2f) -> @builtin(position) vec4f {
+    // return vec4f(pos.x, pos.y, 0, 1); // (X, Y, Z, W)
+    return vec4f(pos*0.5, 0, 1);
+  }
+
+  @fragment
+  fn fragmentMain() -> @location(0) vec4f {
+    return vec4f(1, mousePosition, 1);
+  }
+`,
 })
