@@ -3,7 +3,11 @@ import styled from 'styled-components'
 import { Feature, Point, Polygon } from 'geojson'
 import { v4 } from 'uuid'
 
-import { createTestPolygonDrawingSet, useWebGPU } from '../webgpu/helper'
+import {
+    createTestPolygonDrawingSet,
+    renderBackgroundPassFactory,
+    useWebGPU,
+} from '../webgpu/helper'
 import testdata from '../geo/testdata'
 import { createPolygonShader } from '../webgpu/shaders'
 
@@ -93,9 +97,6 @@ const createRenderer = async (canvasId: string) => {
         ],
     })
 
-    const { polVertsBuffer, polBindGroup, polPipeline } =
-        createTestPolygonDrawingSet(pol, device)
-
     const pipelineLayout = device.createPipelineLayout({
         label: 'Pipeline Layout',
         bindGroupLayouts: [bindGroupLayout],
@@ -125,38 +126,19 @@ const createRenderer = async (canvasId: string) => {
         },
     })
 
+    const renderBackgroundPass = renderBackgroundPassFactory({
+        r: 0.2,
+        g: 0.2,
+        b: 0.24,
+    })
+
+    const renderPolPass = createTestPolygonDrawingSet(pol, device)
+
     const renderer = (mousePosition: [number, number] = [0, 0]) => {
         const encoder = device.createCommandEncoder()
 
-        const backgroundPass = encoder.beginRenderPass({
-            colorAttachments: [
-                {
-                    view: context.getCurrentTexture().createView(),
-                    loadOp: 'clear',
-                    clearValue: { r: 0.5, g: 0.5, b: 0.5, a: 1 },
-                    storeOp: 'store',
-                },
-            ],
-        })
-        backgroundPass.end()
-
-        const polRenderPass = encoder.beginRenderPass({
-            colorAttachments: [
-                {
-                    view: context.getCurrentTexture().createView(),
-                    loadOp: 'load',
-                    storeOp: 'store',
-                },
-            ],
-        })
-
-        polRenderPass.setBindGroup(0, polBindGroup)
-        polRenderPass.setVertexBuffer(0, polVertsBuffer)
-
-        polRenderPass.setPipeline(polPipeline)
-        polRenderPass.draw(5)
-
-        polRenderPass.end()
+        renderBackgroundPass(encoder, context)
+        renderPolPass(encoder, context)
 
         const mousePositionPass = encoder.beginRenderPass({
             colorAttachments: [

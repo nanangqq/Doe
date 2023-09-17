@@ -124,11 +124,44 @@ export const createTestPolygonDrawingSet = (
         },
     })
 
-    return {
-        polVertsBuffer,
-        polBindGroupLayout,
-        polBindGroup,
-        polShaderModule,
-        polPipeline,
+    const renderPolPass = (
+        encoder: GPUCommandEncoder,
+        context: GPUCanvasContext,
+    ) => {
+        const polRenderPass = encoder.beginRenderPass({
+            colorAttachments: [
+                {
+                    view: context.getCurrentTexture().createView(),
+                    loadOp: 'load',
+                    storeOp: 'store',
+                },
+            ],
+        })
+
+        polRenderPass.setBindGroup(0, polBindGroup)
+        polRenderPass.setVertexBuffer(0, polVertsBuffer)
+
+        polRenderPass.setPipeline(polPipeline)
+        polRenderPass.draw(5)
+
+        polRenderPass.end()
     }
+
+    return renderPolPass
 }
+
+export const renderBackgroundPassFactory =
+    (bgcolor: { r: number; g: number; b: number }) =>
+    (encoder: GPUCommandEncoder, context: GPUCanvasContext) => {
+        const backgroundPass = encoder.beginRenderPass({
+            colorAttachments: [
+                {
+                    view: context.getCurrentTexture().createView(),
+                    loadOp: 'clear',
+                    clearValue: { ...bgcolor, a: 1 },
+                    storeOp: 'store',
+                },
+            ],
+        })
+        backgroundPass.end()
+    }
