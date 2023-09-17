@@ -12,9 +12,7 @@ export default function TestPage() {
 
     return (
         <div style={{ marginLeft: 4 }}>
-            {/* <ViewComponent width="90%" height="30vh" /> */}
             <ViewComponent width="640px" height="640px" />
-            {/* <ViewComponent width="640px" height="640px" /> */}
             <br />
 
             {/* <Link to="/test/route-error">route-error</Link>

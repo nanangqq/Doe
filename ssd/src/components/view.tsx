@@ -93,16 +93,12 @@ const createRenderer = async (canvasId: string) => {
         ],
     })
 
-    const {
-        polVertsBuffer,
-        polBindGroupLayout,
-        polBindGroup,
-        polShaderModule,
-    } = createTestPolygonDrawingSet(pol, device)
+    const { polVertsBuffer, polBindGroup, polPipeline } =
+        createTestPolygonDrawingSet(pol, device)
 
     const pipelineLayout = device.createPipelineLayout({
         label: 'Pipeline Layout',
-        bindGroupLayouts: [bindGroupLayout, polBindGroupLayout],
+        bindGroupLayouts: [bindGroupLayout],
     })
 
     const shaderModule = device.createShaderModule(createPolygonShader())
@@ -111,34 +107,12 @@ const createRenderer = async (canvasId: string) => {
         label: 'pipeline',
         layout: pipelineLayout,
         vertex: {
-            module: polShaderModule,
-            entryPoint: 'vertexMain',
-            buffers: [vertexBufferLayout],
-        },
-        fragment: {
-            module: polShaderModule,
-            entryPoint: 'fragmentMain',
-            targets: [
-                {
-                    format,
-                },
-            ],
-        },
-        primitive: {
-            topology: 'line-strip',
-        },
-    })
-
-    const pipeline2 = device.createRenderPipeline({
-        label: 'pipeline2',
-        layout: pipelineLayout,
-        vertex: {
             module: shaderModule,
             entryPoint: 'vertexMain',
             buffers: [vertexBufferLayout],
         },
         fragment: {
-            module: polShaderModule,
+            module: shaderModule,
             entryPoint: 'fragmentMain',
             targets: [
                 {
@@ -152,9 +126,9 @@ const createRenderer = async (canvasId: string) => {
     })
 
     const renderer = (mousePosition: [number, number] = [0, 0]) => {
-        const [x, y] = mousePosition
         const encoder = device.createCommandEncoder()
-        const pass = encoder.beginRenderPass({
+
+        const backgroundPass = encoder.beginRenderPass({
             colorAttachments: [
                 {
                     view: context.getCurrentTexture().createView(),
@@ -164,23 +138,27 @@ const createRenderer = async (canvasId: string) => {
                 },
             ],
         })
-        device.queue.writeBuffer(
-            mousePositionStorage,
-            0,
-            new Float32Array(mousePosition),
-        )
+        backgroundPass.end()
 
-        pass.setBindGroup(0, bindGroup)
-        pass.setBindGroup(1, polBindGroup)
-        pass.setVertexBuffer(0, polVertsBuffer)
-        pass.setVertexBuffer(1, vertsBuffer)
+        const polRenderPass = encoder.beginRenderPass({
+            colorAttachments: [
+                {
+                    view: context.getCurrentTexture().createView(),
+                    loadOp: 'load',
+                    storeOp: 'store',
+                },
+            ],
+        })
 
-        pass.setPipeline(pipeline)
-        pass.draw(5)
+        polRenderPass.setBindGroup(0, polBindGroup)
+        polRenderPass.setVertexBuffer(0, polVertsBuffer)
 
-        pass.end()
+        polRenderPass.setPipeline(polPipeline)
+        polRenderPass.draw(5)
 
-        const pass2 = encoder.beginRenderPass({
+        polRenderPass.end()
+
+        const mousePositionPass = encoder.beginRenderPass({
             colorAttachments: [
                 {
                     view: context.getCurrentTexture().createView(),
@@ -195,15 +173,13 @@ const createRenderer = async (canvasId: string) => {
             new Float32Array(mousePosition),
         )
 
-        pass2.setBindGroup(0, bindGroup)
-        pass2.setBindGroup(1, polBindGroup)
-        pass2.setVertexBuffer(0, polVertsBuffer)
-        pass2.setVertexBuffer(1, vertsBuffer)
+        mousePositionPass.setBindGroup(0, bindGroup)
+        mousePositionPass.setVertexBuffer(0, vertsBuffer)
 
-        pass2.setPipeline(pipeline2)
-        pass2.draw(5)
+        mousePositionPass.setPipeline(pipeline)
+        mousePositionPass.draw(5)
 
-        pass2.end()
+        mousePositionPass.end()
 
         device.queue.submit([encoder.finish()])
     }
@@ -233,8 +209,7 @@ export default function ViewComponent({
     useEffect(init, [])
 
     useEffect(() => {
-        console.log(mousePosition)
-        // console.log(renderer)
+        // console.log(mousePosition)
         renderer(mousePosition)
     }, [mousePosition, renderer])
 
@@ -262,6 +237,9 @@ export default function ViewComponent({
                             Number(height.replace('px', '')) / 2) /
                         (Number(height.replace('px', '')) / 2)
                     setMousePosition([x, y])
+                }}
+                style={{
+                    cursor: 'none',
                 }}
             />
         </DefaultViewContainer>

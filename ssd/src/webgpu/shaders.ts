@@ -174,12 +174,12 @@ export const createPolygonShader = () => ({
     label: 'pol shader',
     code: /* wgsl */ `
   // Your shader code will go here
-  @group(1) @binding(1) var<storage> mousePosition: vec2f;
+  @group(0) @binding(1) var<storage> mousePosition: vec2f;
 
   @vertex
   fn vertexMain(@location(0) pos: vec2f) -> @builtin(position) vec4f {
     // return vec4f(pos.x, pos.y, 0, 1); // (X, Y, Z, W)
-    return vec4f(pos*0.5, 0, 1);
+    return vec4f((mousePosition + pos*0.1), 0, 1);
   }
 
   @fragment

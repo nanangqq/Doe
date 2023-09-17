@@ -93,41 +93,42 @@ export const createTestPolygonDrawingSet = (
         ],
     })
 
-    // const pipelineLayout = device.createPipelineLayout({
-    //     label: 'pol Pipeline Layout',
-    //     bindGroupLayouts: [polBindGroupLayout],
-    // })
+    const polPipelineLayout = device.createPipelineLayout({
+        label: 'pol Pipeline Layout',
+        bindGroupLayouts: [polBindGroupLayout],
+    })
 
     const polShaderModule = device.createShaderModule(
         createDefaultPolygonShader(),
     )
 
-    // const polPipeline = device.createRenderPipeline({
-    //     label: 'pol pipeline',
-    //     layout: pipelineLayout,
-    //     vertex: {
-    //         module: polShaderModule,
-    //         entryPoint: 'vertexMain',
-    //         buffers: [polVertexBufferLayout],
-    //     },
-    //     fragment: {
-    //         module: polShaderModule,
-    //         entryPoint: 'fragmentMain',
-    //         targets: [
-    //             {
-    //                 format: navigator.gpu.getPreferredCanvasFormat(),
-    //             },
-    //         ],
-    //     },
-    //     primitive: {
-    //         topology: 'line-strip',
-    //     },
-    // })
+    const polPipeline = device.createRenderPipeline({
+        label: 'pol pipeline',
+        layout: polPipelineLayout,
+        vertex: {
+            module: polShaderModule,
+            entryPoint: 'vertexMain',
+            buffers: [polVertexBufferLayout],
+        },
+        fragment: {
+            module: polShaderModule,
+            entryPoint: 'fragmentMain',
+            targets: [
+                {
+                    format: navigator.gpu.getPreferredCanvasFormat(),
+                },
+            ],
+        },
+        primitive: {
+            topology: 'line-strip',
+        },
+    })
 
     return {
         polVertsBuffer,
         polBindGroupLayout,
         polBindGroup,
         polShaderModule,
+        polPipeline,
     }
 }
